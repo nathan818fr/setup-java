@@ -1,4 +1,4 @@
-name: 'Setup Java JDK'
+name: 'Setup Java JDK (w/ server-id-list)'
 description: 'Set up a specific version of the Java JDK and add the
    command-line tools to the PATH'
 author: 'GitHub'
@@ -29,6 +29,10 @@ inputs:
        file. Default is `github`'
     required: false
     default: 'github'
+  server-id-list:
+    description: 'IDs of the repositories in the pom.xml file (separated by comma).'
+    required: false
+    default: ''
   server-username:
     description: 'Environment variable name for the username for authentication
        to the Apache Maven repository. Default is $GITHUB_ACTOR'
