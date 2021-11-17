@@ -15,6 +15,11 @@ export const SETTINGS_FILE = 'settings.xml';
 
 export async function configureAuthentication() {
   const id = core.getInput(constants.INPUT_SERVER_ID);
+  const idList = core
+    .getInput(constants.INPUT_SERVER_ID_LIST)
+    .split(',')
+    .map(id => id.trim())
+    .filter(id => !!id.length);
   const username = core.getInput(constants.INPUT_SERVER_USERNAME);
   const password = core.getInput(constants.INPUT_SERVER_PASSWORD);
   const settingsDirectory =
@@ -31,7 +36,7 @@ export async function configureAuthentication() {
   }
 
   await createAuthenticationSettings(
-    id,
+    idList.length ? idList : [id],
     username,
     password,
     settingsDirectory,
@@ -47,27 +52,27 @@ export async function configureAuthentication() {
 }
 
 export async function createAuthenticationSettings(
-  id: string,
+  idList: string[],
   username: string,
   password: string,
   settingsDirectory: string,
   overwriteSettings: boolean,
   gpgPassphrase: string | undefined = undefined
 ) {
-  core.info(`Creating ${SETTINGS_FILE} with server-id: ${id}`);
+  core.info(`Creating ${SETTINGS_FILE} with server-id: ${idList.join(', ')}`);
   // when an alternate m2 location is specified use only that location (no .m2 directory)
   // otherwise use the home/.m2/ path
   await io.mkdirP(settingsDirectory);
   await write(
     settingsDirectory,
-    generate(id, username, password, gpgPassphrase),
+    generate(idList, username, password, gpgPassphrase),
     overwriteSettings
   );
 }
 
 // only exported for testing purposes
 export function generate(
-  id: string,
+  idList: string[],
   username: string,
   password: string,
   gpgPassphrase?: string | undefined
@@ -79,13 +84,11 @@ export function generate(
       '@xsi:schemaLocation':
         'http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd',
       servers: {
-        server: [
-          {
-            id: id,
-            username: `\${env.${username}}`,
-            password: `\${env.${password}}`
-          }
-        ]
+        server: idList.map(id => ({
+          id: id,
+          username: `\${env.${username}}`,
+          password: `\${env.${password}}`
+        }))
       }
     }
   };

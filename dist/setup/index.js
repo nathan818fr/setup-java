@@ -14465,7 +14465,7 @@ exports.HTMLCollectionImpl = HTMLCollectionImpl;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.STATE_GPG_PRIVATE_KEY_FINGERPRINT = exports.INPUT_JOB_STATUS = exports.INPUT_CACHE = exports.INPUT_DEFAULT_GPG_PASSPHRASE = exports.INPUT_DEFAULT_GPG_PRIVATE_KEY = exports.INPUT_GPG_PASSPHRASE = exports.INPUT_GPG_PRIVATE_KEY = exports.INPUT_OVERWRITE_SETTINGS = exports.INPUT_SETTINGS_PATH = exports.INPUT_SERVER_PASSWORD = exports.INPUT_SERVER_USERNAME = exports.INPUT_SERVER_ID = exports.INPUT_CHECK_LATEST = exports.INPUT_JDK_FILE = exports.INPUT_DISTRIBUTION = exports.INPUT_JAVA_PACKAGE = exports.INPUT_ARCHITECTURE = exports.INPUT_JAVA_VERSION = exports.MACOS_JAVA_CONTENT_POSTFIX = void 0;
+exports.STATE_GPG_PRIVATE_KEY_FINGERPRINT = exports.INPUT_JOB_STATUS = exports.INPUT_CACHE = exports.INPUT_DEFAULT_GPG_PASSPHRASE = exports.INPUT_DEFAULT_GPG_PRIVATE_KEY = exports.INPUT_GPG_PASSPHRASE = exports.INPUT_GPG_PRIVATE_KEY = exports.INPUT_OVERWRITE_SETTINGS = exports.INPUT_SETTINGS_PATH = exports.INPUT_SERVER_PASSWORD = exports.INPUT_SERVER_USERNAME = exports.INPUT_SERVER_ID_LIST = exports.INPUT_SERVER_ID = exports.INPUT_CHECK_LATEST = exports.INPUT_JDK_FILE = exports.INPUT_DISTRIBUTION = exports.INPUT_JAVA_PACKAGE = exports.INPUT_ARCHITECTURE = exports.INPUT_JAVA_VERSION = exports.MACOS_JAVA_CONTENT_POSTFIX = void 0;
 exports.MACOS_JAVA_CONTENT_POSTFIX = 'Contents/Home';
 exports.INPUT_JAVA_VERSION = 'java-version';
 exports.INPUT_ARCHITECTURE = 'architecture';
@@ -14474,6 +14474,7 @@ exports.INPUT_DISTRIBUTION = 'distribution';
 exports.INPUT_JDK_FILE = 'jdkFile';
 exports.INPUT_CHECK_LATEST = 'check-latest';
 exports.INPUT_SERVER_ID = 'server-id';
+exports.INPUT_SERVER_ID_LIST = 'server-id-list';
 exports.INPUT_SERVER_USERNAME = 'server-username';
 exports.INPUT_SERVER_PASSWORD = 'server-password';
 exports.INPUT_SETTINGS_PATH = 'settings-path';
@@ -24916,6 +24917,11 @@ exports.SETTINGS_FILE = 'settings.xml';
 function configureAuthentication() {
     return __awaiter(this, void 0, void 0, function* () {
         const id = core.getInput(constants.INPUT_SERVER_ID);
+        const idList = core
+            .getInput(constants.INPUT_SERVER_ID_LIST)
+            .split(',')
+            .map(id => id.trim())
+            .filter(id => !!id.length);
         const username = core.getInput(constants.INPUT_SERVER_USERNAME);
         const password = core.getInput(constants.INPUT_SERVER_PASSWORD);
         const settingsDirectory = core.getInput(constants.INPUT_SETTINGS_PATH) || path.join(os.homedir(), exports.M2_DIR);
@@ -24926,7 +24932,7 @@ function configureAuthentication() {
         if (gpgPrivateKey) {
             core.setSecret(gpgPrivateKey);
         }
-        yield createAuthenticationSettings(id, username, password, settingsDirectory, overwriteSettings, gpgPassphrase);
+        yield createAuthenticationSettings(idList.length ? idList : [id], username, password, settingsDirectory, overwriteSettings, gpgPassphrase);
         if (gpgPrivateKey) {
             core.info('Importing private gpg key');
             const keyFingerprint = (yield gpg.importKey(gpgPrivateKey)) || '';
@@ -24935,31 +24941,29 @@ function configureAuthentication() {
     });
 }
 exports.configureAuthentication = configureAuthentication;
-function createAuthenticationSettings(id, username, password, settingsDirectory, overwriteSettings, gpgPassphrase = undefined) {
+function createAuthenticationSettings(idList, username, password, settingsDirectory, overwriteSettings, gpgPassphrase = undefined) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.info(`Creating ${exports.SETTINGS_FILE} with server-id: ${id}`);
+        core.info(`Creating ${exports.SETTINGS_FILE} with server-id: ${idList.join(', ')}`);
         // when an alternate m2 location is specified use only that location (no .m2 directory)
         // otherwise use the home/.m2/ path
         yield io.mkdirP(settingsDirectory);
-        yield write(settingsDirectory, generate(id, username, password, gpgPassphrase), overwriteSettings);
+        yield write(settingsDirectory, generate(idList, username, password, gpgPassphrase), overwriteSettings);
     });
 }
 exports.createAuthenticationSettings = createAuthenticationSettings;
 // only exported for testing purposes
-function generate(id, username, password, gpgPassphrase) {
+function generate(idList, username, password, gpgPassphrase) {
     const xmlObj = {
         settings: {
             '@xmlns': 'http://maven.apache.org/SETTINGS/1.0.0',
             '@xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
             '@xsi:schemaLocation': 'http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd',
             servers: {
-                server: [
-                    {
-                        id: id,
-                        username: `\${env.${username}}`,
-                        password: `\${env.${password}}`
-                    }
-                ]
+                server: idList.map(id => ({
+                    id: id,
+                    username: `\${env.${username}}`,
+                    password: `\${env.${password}}`
+                }))
             }
         }
     };
