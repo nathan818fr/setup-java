@@ -64546,7 +64546,7 @@ const core = __importStar(__webpack_require__(470));
 const glob = __importStar(__webpack_require__(281));
 const STATE_CACHE_PRIMARY_KEY = 'cache-primary-key';
 const CACHE_MATCHED_KEY = 'cache-matched-key';
-const CACHE_KEY_PREFIX = 'setup-java';
+const CACHE_KEY_PREFIX = 'setup-java-' + process.env['GITHUB_WORKFLOW'];
 const supportedPackageManager = [
     {
         id: 'maven',
