@@ -40,6 +40,15 @@ export class MicrosoftDistributions extends JavaBase {
     if (this.architecture !== 'x64' && this.architecture !== 'aarch64') {
       throw new Error(`Unsupported architecture: ${this.architecture}`);
     }
+
+    if (!this.stable) {
+      throw new Error('Early access versions are not supported');
+    }
+
+    if (this.packageType !== 'jdk') {
+      throw new Error('Microsoft Build of OpenJDK provides only the `jdk` package type');
+    }
+
     const availableVersionsRaw = await this.getAvailableVersions();
 
     const opts = this.getPlatformOption();
@@ -72,10 +81,16 @@ export class MicrosoftDistributions extends JavaBase {
     // We will need Microsoft to add an endpoint where we can query for versions.
     const jdkVersions = [
       {
+        version: [17, 0, 3]
+      },
+      {
         version: [17, 0, 1, 12, 1]
       },
       {
         version: [16, 0, 2, 7, 1]
+      },
+      {
+        version: [11, 0, 15]
       }
     ];
 

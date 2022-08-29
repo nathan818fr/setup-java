@@ -58,7 +58,7 @@ inputs:
        $GPG_PASSPHRASE.'
     required: false
   cache:
-    description: 'Name of the build platform to cache dependencies. It can be "maven" or "gradle".'
+    description: 'Name of the build platform to cache dependencies. It can be "maven", "gradle" or "sbt".'
     required: false
   job-status:
     description: 'Workaround to pass job status to post job step. This variable is not intended for manual setting'
@@ -71,6 +71,6 @@ outputs:
   path:
     description: 'Path to where the java environment has been installed (same as $JAVA_HOME)'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/setup/index.js'
   post: 'dist/cleanup/index.js'
