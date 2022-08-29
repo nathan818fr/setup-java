@@ -84,11 +84,17 @@ export function generate(
       '@xsi:schemaLocation':
         'http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd',
       servers: {
-        server: idList.map(id => ({
-          id: id,
-          username: `\${env.${username}}`,
-          password: `\${env.${password}}`
-        }))
+        server: idList.map(rawId => {
+          const rawIdParts = rawId.split(':');
+          const serverId = rawIdParts[0];
+          const serverUsername = rawIdParts[1] || username;
+          const serverPassword = rawIdParts[2] || password;
+          return ({
+            id: serverId,
+            username: `\${env.${serverUsername}}`,
+            password: `\${env.${serverPassword}}`,
+          });
+        })
       }
     }
   };
